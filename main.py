@@ -1,3 +1,14 @@
+
+'''
+projekt_3.py: třetí projekt do Engeto Online Python Akademie
+
+author: Markéta Giňovská
+email: marketa.ginovska@gmail.com
+discord: MarketaGi
+'''
+
+
+
 import csv
 import requests
 from bs4 import BeautifulSoup
