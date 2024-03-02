@@ -1,14 +1,3 @@
-
-'''
-projekt_3.py: třetí projekt do Engeto Online Python Akademie
-
-author: Markéta Giňovská
-email: marketa.ginovska@gmail.com
-discord: MarketaGi
-'''
-
-
-
 import csv
 import requests
 from bs4 import BeautifulSoup
@@ -19,11 +8,17 @@ import re
 import argparse
 from datetime import datetime
 
-#def zpracuj_odpoved_serveru(url: str) -> BeautifulSoup:  
-#    odpoved = requests.get(url)
-#    return BeautifulSoup(odpoved.text, "html.parser")
-
 def scrape_web_page(url: str) -> BeautifulSoup:  
+    '''
+    Downloads the web page, caches it to disk (current folder), and returns a BeautifulSoup object.
+
+    Parameters:
+        url (str): The URL of the web page to scrape.
+
+    Returns:
+        BeautifulSoup: A BeautifulSoup
+    '''
+
     url_hash=hashlib.md5(url.encode('utf-8')).hexdigest()
     if not path.exists(url_hash):
         odpoved = requests.get(url)
@@ -39,28 +34,18 @@ def scrape_web_page(url: str) -> BeautifulSoup:
 
     return BeautifulSoup(text, "html.parser")
 
-#def scrape_web_page(url: str) -> BeautifulSoup:  
-#    odpoved = requests.get(url)
-#    if not odpoved.ok:
-#        print(f"spatny odkaz {url}")
-#        exit(1)
-#    text=odpoved.text
-#    return BeautifulSoup(text, "html.parser")
+def export_to_csv(data: dict,vystup:str):
+    '''
+    Export data from a dictionary to a CSV file.
 
-def find_link(soup: BeautifulSoup,okrsek) : #druhá část odkazu, která nás přenáší na stránku obce
-    tables=soup.find_all('table')
-    for table in tables:
-        rows=table.find_all('tr')
-        for row in rows[2:]:
-            cells =row.find_all('td')
-            location=cells[1].text
-            if location!=okrsek:
-                continue
-            odkaz=cells[3].find('a')['href']
-    nova_url ="https://volby.cz/pls/ps2017nss/" + odkaz
-    return nova_url  
+    Parameters:
+        data (dict): Dictionary containing the data to be exported.
+        output (str): Path to the output CSV file.
 
-def export_to_csv(data,vystup):
+    Returns:
+        None
+    '''
+
     fieldnames=[]
     for d in data:
         for key in d.keys():
@@ -72,7 +57,18 @@ def export_to_csv(data,vystup):
         for row in data:  #jednotlivé řádky
             writer.writerow(row)
     
-def process_choice_of_municipality(soup: BeautifulSoup):
+def process_choice_of_municipality(soup: BeautifulSoup) ->list[dict]:
+
+    '''
+    Processes the choice of municipality from the provided BeautifulSoup object and returns a list of dictionaries containing the data.
+
+    Parameters:
+        soup (BeautifulSoup): The BeautifulSoup 
+
+    Returns:
+        list[dict]: A list of dictionaries containing the processed data for each municipality.
+    '''
+
     out =[]
     tables=soup.find_all('table')
     for table in tables:
@@ -102,7 +98,18 @@ def process_choice_of_municipality(soup: BeautifulSoup):
                 pass
     return out
 
-def process_municipality_with_precincts(soup):
+def process_municipality_with_precincts(soup: BeautifulSoup) -> dict:
+
+    '''
+    Processes a municipality with multiple precincts from the provided BeautifulSoup object and returns a dictionary containing the data.
+
+    Parameters:
+        soup (BeautifulSoup): The BeautifulSoup 
+
+    Returns:
+        dict: A dictionary containing the processed data for the municipality with multiple precincts.
+    '''
+
     table_okrsek=soup.find_all('table')
     rows=table_okrsek[0].find_all('tr')
     outrow=dict()
@@ -124,6 +131,16 @@ def process_municipality_with_precincts(soup):
     return outrow
 
 def process_political_sides(table: BeautifulSoup) -> dict :
+    '''
+    Processes political sides from the provided BeautifulSoup table and returns a dictionary containing the data.
+
+    Parameters:
+        table (BeautifulSoup): The BeautifulSoup 
+
+    Returns:
+        dict: A dictionary containing the processed political sides data.
+    '''
+
     out = dict()
     rows=table.find_all('tr')
     for row in rows[2:]:
@@ -135,6 +152,16 @@ def process_political_sides(table: BeautifulSoup) -> dict :
     return out
 
 def process_municipality_one_precint(soup: BeautifulSoup) -> dict :
+    '''
+    Processes a municipality with a single precinct from the provided BeautifulSoup object and returns a dictionary containing the data.
+
+    Parameters:
+        soup (BeautifulSoup): The BeautifulSoup
+
+    Returns:
+        dict: A dictionary containing the processed data for the municipality with a single precinct.
+    '''
+
     out = dict()
     tables=soup.find_all('table')
     cells = tables[0].find_all('td')
@@ -150,6 +177,16 @@ def process_municipality_one_precint(soup: BeautifulSoup) -> dict :
     return out
         
 def process_municipality_more_precints(soup: BeautifulSoup) -> dict :
+    '''
+    Processes a municipality with multiple precincts from the provided BeautifulSoup object and returns a dictionary containing the data.
+
+    Parameters:
+        soup (BeautifulSoup): The BeautifulSoup 
+
+    Returns:
+        dict: A dictionary containing the processed data for the municipality with multiple precincts.
+    '''
+
     out = dict()
     tables=soup.find_all('table')
     cells = tables[0].find_all('td')
@@ -159,15 +196,23 @@ def process_municipality_more_precints(soup: BeautifulSoup) -> dict :
     out['envelopes']=int(text)
     text=re.sub("[^0-9]","",cells[-2].text)
     out['valid']=int(text)
-    out['envelopes']=int(cells[1].text)
-    out['valid']=int(cells[-2].text)
     for table in tables[1:]:
         strany=process_political_sides(table)
         out.update(strany)
     return out    
 
-def main(url: str,vystup):
- 
+def main(url: str,vystup: str):
+    '''
+    Main function to process data from the provided URL and export it to a CSV file.
+
+    Parameters:
+        url (str): The URL of the web page to scrape.
+        output (str): Path to the output CSV file.
+
+    Returns:
+        None
+    '''
+    
     data = process_choice_of_municipality(scrape_web_page(url))
     export_to_csv(data,vystup)
    
